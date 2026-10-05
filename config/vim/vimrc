@@ -1,0 +1,174 @@
+" ======================================================
+" .vimrc — Основной конфигурационный файл Vim
+" ======================================================
+
+" ----- Включение расширенных возможностей -----
+" Отключаем режим совместимости с Vi для использования всех функций Vim
+set nocompatible
+
+" ----- ALE: только встроенные исправления, без внешних программ -----
+let g:ale_enabled = 0
+let g:ale_linters_explicit = 1
+let g:ale_linters = {}
+let g:ale_completion_enabled = 0
+let g:ale_fix_on_save = 0
+let g:ale_fixers = {
+\ '*': ['trim_whitespace', 'remove_trailing_lines'],
+\}
+
+" ----- Управление плагинами (vim-plug) -----
+" vim-plug и плагины устанавливаются через install.sh.
+if empty(glob('~/.vim/autoload/plug.vim'))
+  echohl WarningMsg
+  echom 'Для установки плагинов выполните install.sh из Customize-zsh'
+  echohl None
+else
+" Список плагинов
+call plug#begin('~/.vim/plugged')
+
+" --- Тема и внешний вид ---
+" Тема Darcula (не Dracula)
+" Примечание: для корректной установки 'doums/darcula' используйте vim-plug как указано ниже
+Plug 'doums/darcula'  " Тема оформления Darcula (совместима с Vim/Neovim и поддерживает Truecolor)
+Plug 'itchyny/lightline.vim'  " Красивая и информативная строка состояния
+"Plug 'ryanoasis/vim-devicons'  " Иконки для файлов (требует установки шрифта)
+
+" --- Работа с файлами ---
+Plug 'preservim/nerdtree'  " Файловый менеджер в виде дерева
+Plug 'junegunn/fzf'  " Утилита для нечеткого поиска
+Plug 'junegunn/fzf.vim'  " Интеграция fzf с Vim
+
+" --- Редактирование кода ---
+Plug 'jiangmiao/auto-pairs'  " Автоматическое закрытие скобок и кавычек
+Plug 'tpope/vim-surround'    " Удобная работа с окружением (скобки, кавычки, теги)
+Plug 'tpope/vim-commentary'  " Быстрое комментирование кода
+Plug 'mattn/emmet-vim'       " Быстрое написание HTML/CSS
+
+" --- Встроенные исправления текста ---
+Plug 'dense-analysis/ale'  " Удаление пробелов и лишних пустых строк
+
+" --- Работа с Git ---
+Plug 'airblade/vim-gitgutter'  " Отображение изменений Git в боковой колонке
+
+" --- Подсветка синтаксиса и поддержка языков ---
+" Плагин для поддержки синтаксиса множества языков (альтернатива vim-polyglot)
+Plug 'sheerun/vim-polyglot'  " Подсветка синтаксиса для многих языков
+
+call plug#end()
+endif
+
+" ----- Настройки темы и интерфейса -----
+" Включение поддержки Truecolor для корректного отображения темы Darcula
+if (has("termguicolors"))
+  set termguicolors
+endif
+set background=dark  " Устанавливаем темный фон для темы
+" Применяем тему, если она уже установлена
+if !empty(globpath(&runtimepath, 'colors/darcula.vim'))
+  colorscheme darcula
+endif
+
+" Настройка строки состояния для lightline
+set laststatus=2  " Всегда показывать строку состояния
+let g:lightline = { 'colorscheme': 'darculaOriginal' }  " Используем тему Darcula для lightline
+
+" Постоянное отображение номера строки и относительной нумерации для удобства навигации
+set number
+"set relativenumber
+
+" ----- Основные настройки редактирования -----
+" Настройки табуляции и отступов (4 пробела)
+set tabstop=4      " Ширина табуляции в пробелах
+set shiftwidth=4   " Размер отступа для команд >>, << и ==
+set expandtab      " Преобразовывать табуляцию в пробелы
+set smarttab       " Умные табуляции и бэкспейс
+set autoindent     " Автоматический отступ
+set smartindent    " Умный автоматический отступ
+
+" Визуальные настройки
+syntax on          " Включить подсветку синтаксиса
+set mouse=a        " Включить поддержку мыши (работает в терминале и GUI)
+
+" Удобный поиск
+set ignorecase     " Игнорировать регистр при поиске
+set smartcase      " Поиск с учетом регистра, если в запросе есть заглавные буквы
+set incsearch      " Показывать результаты поиска по мере ввода
+set hlsearch       " Подсвечивать все результаты поиска
+
+" Управление файлами и бекапами
+set nobackup       " Не создавать резервные копии (~)
+set noswapfile     " Не создавать .swp-файлы
+set undofile       " Включить persistent undo
+set undodir=~/.vim/undodir  " Директория для хранения истории отмен
+" Создать директорию для undofile, если её нет
+call mkdir(expand('~/.vim/undodir'), 'p', 0700)
+
+" Скроллинг с отступом
+set scrolloff=5    " Отступ от края экрана при скроллинге (5 строк)
+
+" ----- Горячие клавиши (Leader Maps) -----
+" Лидер-клавиша (по умолчанию \)
+let mapleader = " "  " Устанавливаем пробел в качестве лидера
+
+" Удалить пробелы в конце строк и лишние пустые строки: Пробел f
+nnoremap <silent> <leader>f :ALEFix<CR>
+
+" Настройка клавиш для NERDTree
+" Ctrl+n для открытия/закрытия дерева файлов
+nnoremap <C-n> :NERDTreeToggle<CR>
+" Настройка клавиш для fzf
+" Ctrl+p для поиска файлов
+nnoremap <C-p> :Files<CR>
+" Ctrl+g для поиска текста с помощью ripgrep
+nnoremap <C-g> :Rg<CR>
+" Быстрое сохранение и выход
+" Ctrl+s для сохранения
+nnoremap <C-s> :w<CR>
+" Сохранение из режима вставки
+inoremap <C-s> <C-o>:write<CR>
+" Ctrl+q для выхода
+nnoremap <C-q> :q<CR>
+" Очистка подсветки результатов поиска
+" Ctrl+c для снятия подсветки поиска
+nnoremap <C-c> :nohlsearch<CR>
+
+" ----- Вспомогательные функции -----
+" Встроенная русская раскладка (включается вручную через Ctrl+^)
+if has('keymap')
+  set keymap=russian-jcukenwin
+  set iminsert=0
+  set imsearch=0
+endif
+
+" Настройка под определенные типы файлов (файлы для Python, например)
+augroup language_settings
+  autocmd!
+  autocmd FileType python setlocal expandtab shiftwidth=4 tabstop=4 softtabstop=4
+augroup END
+
+" Встроенные удобства Vim
+filetype plugin indent on
+set hidden
+set backspace=indent,eol,start
+set wildmenu
+set wildmode=longest:full,full
+set splitright
+set splitbelow
+set signcolumn=yes
+set cursorline
+
+" Комментарии к mappings должны быть на отдельных строках
+nnoremap <silent> <leader>/ :nohlsearch<CR>
+xnoremap < <gv
+xnoremap > >gv
+nnoremap n nzz
+nnoremap N Nzz
+
+" Восстановление позиции при открытии файла
+augroup restore_cursor
+  autocmd!
+  autocmd BufReadPost *
+        \ if line("'\"") > 1 && line("'\"") <= line("$") |
+        \   execute "normal! g`\"" |
+        \ endif
+augroup END

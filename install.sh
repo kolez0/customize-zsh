@@ -184,14 +184,14 @@ install_missing_packages() {
 install_dependencies() {
   case "$PLATFORM" in
     macos)
-      install_missing_packages git starship fzf fd bat eza ripgrep zoxide
+      install_missing_packages vim git curl starship fzf fd bat eza ripgrep zoxide
       if ! starship_is_suitable; then
         brew upgrade starship || :
         starship_is_suitable || install_starship_upstream
       fi
       ;;
     debian|ubuntu)
-      install_missing_packages git curl ca-certificates tar gzip gpg fzf fd-find bat ripgrep
+      install_missing_packages vim git curl ca-certificates tar gzip gpg fzf fd-find bat ripgrep
       if ! has eza; then install_eza_debian; fi
       if ! has zoxide; then install_zoxide_upstream; fi
       if ! starship_is_suitable; then
@@ -205,16 +205,16 @@ install_dependencies() {
       fi
       ;;
     fedora)
-      install_missing_packages git curl ca-certificates tar gzip fzf fd-find bat eza ripgrep zoxide
+      install_missing_packages vim git curl ca-certificates tar gzip fzf fd-find bat eza ripgrep zoxide
       if ! starship_is_suitable; then install_starship_upstream; fi
       ;;
     arch)
-      install_missing_packages git starship fzf fd bat eza ripgrep zoxide curl ca-certificates tar gzip gnupg
+      install_missing_packages vim git starship fzf fd bat eza ripgrep zoxide curl ca-certificates tar gzip gnupg
       if ! starship_is_suitable; then install_starship_upstream; fi
       ;;
   esac
 
-  for dependency in git starship fzf fd bat eza rg zoxide; do
+  for dependency in vim git starship fzf fd bat eza rg zoxide; do
     case "$dependency:$PLATFORM" in
       fd:debian|fd:ubuntu|fd:fedora) has fd || has fdfind || fail "после установки не найдена команда fd или fdfind." ;;
       bat:debian|bat:ubuntu) has bat || has batcat || fail "после установки не найдена команда bat или batcat." ;;
@@ -235,6 +235,23 @@ install_antidote() {
     git clone --depth 1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_DIR"
   fi
   [ -r "$ANTIDOTE_DIR/antidote.zsh" ] || fail 'в каталоге Antidote не найден antidote.zsh.'
+}
+
+install_vim_plugins() {
+  [ ! -L "$HOME/.vim" ] && [ ! -L "$HOME/.vim/autoload" ] || fail 'каталог Vim является симлинком; он не изменён.'
+  if [ ! -f "$HOME/.vim/autoload/plug.vim" ]; then
+    mkdir -p "$HOME/.vim/autoload"
+    plug_tmp=$(mktemp "${TMPDIR:-/tmp}/customize-zsh-vim-plug.XXXXXX") || fail 'не удалось создать временный файл vim-plug.'
+    if ! curl -fL --retry 2 https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim -o "$plug_tmp"; then
+      rm -f "$plug_tmp"
+      fail 'не удалось загрузить vim-plug.'
+    fi
+    copy_managed "$plug_tmp" "$HOME/.vim/autoload/plug.vim" vim-plug
+    rm -f "$plug_tmp"
+  fi
+  say 'установка плагинов Vim…'
+  # fzf уже установлен пакетным менеджером; используем его без загрузки бинарника.
+  vim -n -es -u "$HOME/.vimrc" -i NONE -c 'PlugInstall --sync' -c 'qa!' || fail 'не удалось установить плагины Vim.'
 }
 
 record_change() {
@@ -465,10 +482,13 @@ copy_managed "$bundle_tmp" "$ZSH_CONFIG_DIR/antidote_plugins.zsh" zsh/antidote_p
 copy_managed "$SCRIPT_DIR/config/starship.toml" "$CONFIG_HOME/starship.toml" starship.toml
 copy_managed "$SCRIPT_DIR/config/starship-compact.toml" "$PROJECT_DIR/starship-compact.toml" starship-compact.toml
 rm -f "$bundle_tmp"
+copy_managed "$SCRIPT_DIR/config/vim/vimrc" "$HOME/.vimrc" vimrc
 replace_zshrc_block
+install_vim_plugins
 
 say 'установка завершена.'
 say "конфигурация zsh: $ZSH_CONFIG_DIR"
+say "конфигурация Vim: $HOME/.vimrc"
 say "конфигурация Starship: $CONFIG_HOME/starship.toml"
 say "резервные копии: $BACKUP_DIR"
 say 'откройте новую сессию zsh или выполните: source ~/.zshrc'

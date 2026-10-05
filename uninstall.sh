@@ -13,6 +13,11 @@ fail() { printf '%s\n' "customize-zsh: ошибка: $*" >&2; exit 1; }
 
 target_for() {
   case "$1" in
+    vimrc) TARGET=$HOME/.vimrc ;;
+    vim-plug)
+      [ ! -L "$HOME/.vim" ] && [ ! -L "$HOME/.vim/autoload" ] || fail 'каталог Vim является симлинком; остановлено без изменений.'
+      TARGET=$HOME/.vim/autoload/plug.vim
+      ;;
     starship.toml) TARGET=$CONFIG_HOME/starship.toml ;;
     starship-compact.toml) TARGET=$PROJECT_DIR/starship-compact.toml ;;
     zsh/rc.zsh|zsh/options.zsh|zsh/history.zsh|zsh/completion.zsh|zsh/tools.zsh|zsh/plugins.zsh|zsh/.zsh_plugins.txt|zsh/local.zsh|zsh/antidote_plugins.zsh)
